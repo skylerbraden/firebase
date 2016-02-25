@@ -1,0 +1,94 @@
+<html>
+    <head>
+        <!-- AngularJS -->
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.js"></script>
+
+        <!-- Firebase -->
+        <script src="https://cdn.firebase.com/js/client/2.4.0/firebase.js"></script>
+
+        <!-- AngularFire -->
+        <script src="https://cdn.firebase.com/libs/angularfire/1.1.3/angularfire.min.js"></script>
+    </head>
+    
+    
+    <script>
+        angular
+		.module('simple', ['firebase']);
+        
+        //Services
+        (function() {
+            function ChatMessages($firebaseArray) {
+                // create a reference to the database location where we will store our data
+                var randomRoomId = Math.round(Math.random() * 100000000);
+                var ref = new Firebase("https://example-sjb.firebaseio.com/" + randomRoomId);
+
+                // this uses AngularFire to create the synchronized array
+                return $firebaseArray(ref);
+            }
+        
+            angular
+                .module('simple')
+                .factory('ChatMessages', ['$firebaseArray', ChatMessages]);
+        })();
+        
+        // Controllers
+        (function() {
+            function ChatCtrl($scope, ChatMessages) {
+
+                $scope.user = "Guest " + Math.round(Math.random() * 100);
+
+                // we add chatMessages array to the scope to be used in our ng-repeat
+                $scope.messages = ChatMessages;
+
+                // a method to create new messages; called by ng-submit
+                $scope.addMessage = function() {
+                    // calling $add on a synchronized array is like Array.push(),
+                    // except that it saves the changes to our database!
+                    
+                    $scope.messages.$add({
+                        from: $scope.user,
+                        content: $scope.message
+                    });
+
+                    $scope.message = "";
+
+                };
+                
+                
+                // if the messages are empty, add something for fun!
+                $scope.messages.$loaded(function() {
+                    if ($scope.messages.length === 0) {
+                        $scope.messages.$add({
+                        from: "Firebase Docs",
+                        content: "Hello world!"
+                        });
+                    }
+                });              
+                
+            }
+            
+            angular
+                .module('simple')
+                .controller('ChatCtrl', ['$scope', 'ChatMessages', ChatCtrl]);
+        })();
+    </script>
+    
+    
+    
+    
+    
+    <body ng-app="simple">
+        <div ng-controller="ChatCtrl">
+            
+            <ul class="chatbox">
+                <li ng-repeat="message in messages">{{ message.from }}: {{ message.content }}</li>
+            </ul>
+            <form ng-submit="addMessage()">
+                <input type="text" ng-model="message">
+                <input type="submit" value="Add Message">
+            </form>
+        </div>
+        
+    
+    </body>
+</html>
